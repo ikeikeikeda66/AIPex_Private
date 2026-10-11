@@ -2,7 +2,6 @@ import type { ChatStatus } from "ai";
 import { ClockIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "../../../i18n/context";
-import { fetchModelsForSelector, onModelListChange } from "../../../lib/models";
 import { cn } from "../../../lib/utils";
 import type { ContextItem, InputAreaProps } from "../../../types";
 import {
@@ -22,7 +21,6 @@ import {
   PromptInputModelSelectGroup,
   PromptInputModelSelectItem,
   PromptInputModelSelectLabel,
-  PromptInputModelSelectSeparator,
   PromptInputModelSelectTrigger,
   PromptInputModelSelectValue,
   PromptInputSkillTag,
@@ -67,54 +65,9 @@ export function DefaultInputArea({
 
   const effectivePlaceholder = placeholder ?? t("input.placeholder1");
 
-  // Fetch model list from API on mount (self-contained, no prop dependency)
-  const [fetchedModels, setFetchedModels] = useState<Array<{
-    name: string;
-    value: string;
-  }> | null>(null);
-  const [isLoadingModels, setIsLoadingModels] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoadingModels(true);
-    fetchModelsForSelector()
-      .then((serverModels) => {
-        if (!cancelled && serverModels.length > 0) {
-          setFetchedModels(serverModels);
-        }
-      })
-      .catch(() => {
-        // Fallback to prop-provided models (used via `models` below)
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoadingModels(false);
-        }
-      });
-
-    // Subscribe to background model list updates (e.g. server returned newer data)
-    const unsubscribe = onModelListChange((updatedModels) => {
-      if (!cancelled) {
-        setFetchedModels(
-          updatedModels.map((m) => ({ name: m.name, value: m.id })),
-        );
-      }
-    });
-
-    return () => {
-      cancelled = true;
-      unsubscribe();
-    };
-  }, []);
-
   const enabledCustomModels = useMemo(() => {
-    // Always collect enabled BYOK models regardless of byokEnabled flag,
-    // so they appear in the BYOK group even when proxy mode is active.
     return (settings.customModels ?? []).filter((model) => model.enabled);
   }, [settings.customModels]);
-
-  // Server-side (AIPex) models: API-fetched or prop fallback
-  const serverModels = fetchedModels ?? models;
 
   // BYOK model entries formatted for the selector
   const byokModelEntries = useMemo(
@@ -131,9 +84,7 @@ export function DefaultInputArea({
   // Flat list of all models for resolvedDefaultModel and the slot API.
   // BYOK models first so the current BYOK selection resolves correctly.
   const effectiveModels = useMemo(() => {
-    const byokValues = new Set(byokModelEntries.map((m) => m.value));
-    const dedupedServer = serverModels.filter((m) => !byokValues.has(m.value));
-    const combined = [...byokModelEntries, ...dedupedServer];
+    const combined = byokModelEntries;
 
     // If the user's current model is not in any group, prepend it as a custom entry
     const currentModel = settings.aiModel?.trim();
@@ -145,7 +96,7 @@ export function DefaultInputArea({
     }
 
     return combined;
-  }, [byokModelEntries, serverModels, settings.aiModel]);
+  }, [byokModelEntries, settings.aiModel]);
 
   const resolvedDefaultModel = useMemo(() => {
     const candidates = [
@@ -222,8 +173,7 @@ export function DefaultInputArea({
         return;
       }
 
-      // Server (AIPex) model selected → switch to proxy mode
-      void updateSettings({ aiModel: trimmed, byokEnabled: false });
+      void updateSettings({ aiModel: trimmed });
     },
     [selectedModel, enabledCustomModels, updateSettings],
   );
@@ -296,64 +246,29 @@ export function DefaultInputArea({
               <PromptInputModelSelect
                 onValueChange={handleModelChange}
                 value={selectedModel}
-                disabled={isLoadingModels}
               >
                 <PromptInputModelSelectTrigger>
                   <PromptInputModelSelectValue />
                 </PromptInputModelSelectTrigger>
                 <PromptInputModelSelectContent>
-                  {isLoadingModels ? (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                      Loading...
-                    </div>
+                  {byokModelEntries.length > 0 ? (
+                    <PromptInputModelSelectGroup>
+                      <PromptInputModelSelectLabel>
+                        Your models
+                      </PromptInputModelSelectLabel>
+                      {byokModelEntries.map((model) => (
+                        <PromptInputModelSelectItem
+                          key={model.value}
+                          value={model.value}
+                        >
+                          {model.name}
+                        </PromptInputModelSelectItem>
+                      ))}
+                    </PromptInputModelSelectGroup>
                   ) : (
-                    <>
-                      {/* AIPex Models — server-side proxy */}
-                      {serverModels.length > 0 && (
-                        <PromptInputModelSelectGroup>
-                          <PromptInputModelSelectLabel>
-                            AIPex Models
-                          </PromptInputModelSelectLabel>
-                          {serverModels.map((model) => (
-                            <PromptInputModelSelectItem
-                              key={model.value}
-                              value={model.value}
-                            >
-                              {model.name}
-                            </PromptInputModelSelectItem>
-                          ))}
-                        </PromptInputModelSelectGroup>
-                      )}
-
-                      {/* BYOK Models — user's own API key */}
-                      {byokModelEntries.length > 0 && (
-                        <>
-                          {serverModels.length > 0 && (
-                            <PromptInputModelSelectSeparator />
-                          )}
-                          <PromptInputModelSelectGroup>
-                            <PromptInputModelSelectLabel>
-                              BYOK Models
-                            </PromptInputModelSelectLabel>
-                            {byokModelEntries.map((model) => (
-                              <PromptInputModelSelectItem
-                                key={model.value}
-                                value={model.value}
-                              >
-                                {model.name}
-                              </PromptInputModelSelectItem>
-                            ))}
-                          </PromptInputModelSelectGroup>
-                        </>
-                      )}
-
-                      {serverModels.length === 0 &&
-                        byokModelEntries.length === 0 && (
-                          <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                            No models available
-                          </div>
-                        )}
-                    </>
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      No models available
+                    </div>
                   )}
                 </PromptInputModelSelectContent>
               </PromptInputModelSelect>

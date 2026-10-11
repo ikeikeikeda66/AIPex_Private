@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "AIPex",
+  "name": "AIPex Private",
   "version": "2.2.39",
-  "description": "Make your browser an AI browser - no migration, no browser installation, no code writing",
+  "description": "Privacy-hardened fork of AIPex: bring-your-own-key browser automation with no author-side services.",
   "icons": {
     "16": "assets/icon16.png",
     "48": "assets/icon48.png",
@@ -36,23 +36,15 @@
     "open_in_tab": true
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' blob: data: https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://openrouter.ai https://router.requesty.ai https://api.deepseek.com https://api.groq.com https://api.together.xyz https://api.mistral.ai https://api.cohere.ai https://api.perplexity.ai https://api.fireworks.ai https://api.replicate.com https://*.openai.azure.com http://localhost:* http://127.0.0.1:* http://[::1]:*"
   },
   "web_accessible_resources": [
     {
-      "resources": ["assets/*", "assets/vad/*", "assets/onnx/*"],
+      "resources": ["assets/*"],
       "matches": ["<all_urls>"]
     }
   ],
-  "externally_connectable": {
-    "matches": [
-      "https://www.claudechrome.com/*",
-      "https://claudechrome.com/*",
-      "https://aipex.ing/*",
-      "http://localhost:*/*"
-    ]
-  },
-  "host_permissions": ["https://*/*", "http://*/*", "<all_urls>"],
+  "host_permissions": ["<all_urls>"],
   "commands": {
     "open-aipex": {
       "suggested_key": {
@@ -67,21 +59,12 @@
     "windows",
     "tabGroups",
     "activeTab",
-    "bookmarks",
-    "browsingData",
-    "history",
     "scripting",
     "commands",
     "storage",
-    "contextMenus",
-    "sessions",
     "sidePanel",
-    "management",
     "downloads",
     "debugger",
-    "cookies",
-    "webNavigation",
-    "audioCapture",
-    "alarms"
+    "webNavigation"
   ]
 }

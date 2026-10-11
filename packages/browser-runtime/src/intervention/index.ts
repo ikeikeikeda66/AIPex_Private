@@ -12,7 +12,6 @@ export {
   selectionManager,
   userSelectionIntervention,
 } from "./implementations/user-selection.js";
-export { voiceInputIntervention } from "./implementations/voice-input.js";
 export {
   type CancelReason,
   interventionManager,

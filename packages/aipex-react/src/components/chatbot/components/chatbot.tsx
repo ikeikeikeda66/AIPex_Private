@@ -1,12 +1,8 @@
-import { useCallback, useContext, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useMemo, useState } from "react";
 import { useChat, useChatConfig } from "../../../hooks";
 import { useTranslation } from "../../../i18n/context";
 import { cn } from "../../../lib/utils";
-import type {
-  ChatbotThemeVariables,
-  ContextItem,
-  UIMessage,
-} from "../../../types";
+import type { ChatbotThemeVariables, ContextItem } from "../../../types";
 import { DEFAULT_MODELS } from "../constants";
 import {
   AgentContext,
@@ -65,53 +61,6 @@ export function ChatbotProvider({
     autoLoad: true,
   });
 
-  // Keep a stable ref to handlers so the wrapped sendMessage doesn't
-  // re-create on every render
-  const handlersRef = useRef(handlers);
-  handlersRef.current = handlers;
-
-  // Wrap sendMessage with a pre-flight auth check.
-  // If the caller supplied checkAuthBeforeSend and it returns needsAuth,
-  // we inject a LoginPrompt message instead of hitting the network.
-  const wrappedSendMessage = useCallback(
-    async (text: string, files?: File[], contexts?: ContextItem[]) => {
-      const authCheck = handlersRef.current?.checkAuthBeforeSend;
-      if (authCheck) {
-        try {
-          const result = await authCheck();
-          if (result.needsAuth) {
-            // Build a user message + auth-error assistant message inline
-            const userMsg: UIMessage = {
-              id: `user-${Date.now()}`,
-              role: "user",
-              parts: [{ type: "text", text }],
-              timestamp: Date.now(),
-            };
-            const authMsg: UIMessage = {
-              id: `auth-error-${Date.now()}`,
-              role: "assistant",
-              parts: [
-                {
-                  type: "text",
-                  text: "**Authentication Required**\n\nPlease login to continue using the AI assistant, or configure your own API key.",
-                },
-              ],
-              timestamp: Date.now(),
-              metadata: { needLogin: true },
-            };
-            chatState.setMessages([...chatState.messages, userMsg, authMsg]);
-            return;
-          }
-        } catch {
-          // If auth check fails, proceed with the request and let the
-          // backend return an appropriate error.
-        }
-      }
-      await chatState.sendMessage(text, files, contexts);
-    },
-    [chatState],
-  );
-
   // Compute theme values
   const themeStyle = useMemo(
     () => themeToStyle(theme.variables),
@@ -138,14 +87,14 @@ export function ChatbotProvider({
       status: chatState.status,
       sessionId: chatState.sessionId,
       metrics: chatState.metrics,
-      sendMessage: wrappedSendMessage,
+      sendMessage: chatState.sendMessage,
       continueConversation: chatState.continueConversation,
       interrupt: chatState.interrupt,
       reset: chatState.reset,
       regenerate: chatState.regenerate,
       setMessages: chatState.setMessages,
     }),
-    [chatState, wrappedSendMessage],
+    [chatState],
   );
 
   const configContextValue = useMemo(

@@ -25,9 +25,6 @@ import {
   SourcesTrigger,
 } from "../../ai-elements/sources";
 import { useComponentsContext } from "../context";
-import { BuyTokenPrompt } from "./buy-token-prompt";
-import { LoginPrompt } from "./login-prompt";
-import { ModelChangePrompt } from "./model-change-prompt";
 import { DefaultToolDisplay } from "./slots/tool-display";
 
 /**
@@ -250,33 +247,6 @@ export function DefaultMessageItem({
             return null;
         }
       })}
-
-      {/* Metadata-driven prompts for assistant error messages */}
-      {message.role === "assistant" && message.metadata && (
-        <>
-          {message.metadata.needLogin && (
-            <LoginPrompt
-              showByokOption
-              onLogin={slots.onLogin}
-              onOpenSettings={() => chrome.runtime?.openOptionsPage?.()}
-            />
-          )}
-          {message.metadata.needBuyToken && (
-            <BuyTokenPrompt
-              currentCredits={message.metadata.currentCredits}
-              requiredCredits={message.metadata.requiredCredits}
-            />
-          )}
-          {message.metadata.needChangeModel && (
-            <ModelChangePrompt
-              supportedModels={message.metadata.supportedModels || []}
-              onModelChange={(modelId) => {
-                chrome.storage?.local?.set?.({ aiModel: modelId });
-              }}
-            />
-          )}
-        </>
-      )}
     </div>
   );
 }

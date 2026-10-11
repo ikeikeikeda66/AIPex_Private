@@ -40,7 +40,6 @@ export type {
 // Individual component exports
 export {
   type AutomationModeValue,
-  BuyTokenPrompt,
   ConfigurationGuide,
   type ConfigurationGuideProps,
   DefaultHeader,
@@ -51,16 +50,11 @@ export {
   type ExtendedInputAreaProps,
   Header,
   InputArea,
-  LoginPrompt,
   MessageItem,
   MessageList,
   ModeIndicator,
-  ModelChangePrompt,
-  type ModelInfo,
   TokenUsageIndicator,
   type TokenUsageIndicatorProps,
-  UpdateBanner,
-  type VersionCheckResult,
   WelcomeScreen,
 } from "./components";
 // Default export for backward compatibility

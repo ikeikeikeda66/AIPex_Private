@@ -6,7 +6,6 @@
 import type { Context } from "@aipexstudio/aipex-core";
 import type { ContextItem } from "@aipexstudio/aipex-react/components/ai-elements/prompt-input";
 import {
-  BookmarksProvider,
   CurrentPageProvider,
   TabsProvider,
 } from "@aipexstudio/browser-runtime";
@@ -14,7 +13,6 @@ import { useCallback, useEffect, useRef } from "react";
 
 const currentPageProvider = new CurrentPageProvider();
 const tabsProvider = new TabsProvider();
-const bookmarksProvider = new BookmarksProvider();
 
 /**
  * Get all available contexts from providers
@@ -24,12 +22,10 @@ async function getAllAvailableContexts(): Promise<ContextItem[]> {
   const results = await Promise.allSettled([
     currentPageProvider.getContexts(),
     tabsProvider.getContexts(),
-    bookmarksProvider.getContexts(),
   ]);
 
   const contexts: Context[] = [];
   let currentPageTabId: number | null = null;
-  let currentPageUrl: string | null = null;
 
   // Current page - add first and record its tab ID and URL
   if (results[0].status === "fulfilled" && results[0].value.length > 0) {
@@ -38,7 +34,6 @@ async function getAllAvailableContexts(): Promise<ContextItem[]> {
 
     // Extract tab ID from metadata
     currentPageTabId = currentPage.metadata?.tabId as number | null;
-    currentPageUrl = currentPage.metadata?.url as string | null;
   }
 
   // Tabs - exclude the current page tab
@@ -52,18 +47,6 @@ async function getAllAvailableContexts(): Promise<ContextItem[]> {
       return true;
     });
     contexts.push(...filteredTabs);
-  }
-
-  // Bookmarks - exclude if URL matches current page
-  if (results[2].status === "fulfilled") {
-    const allBookmarks = results[2].value;
-    const filteredBookmarks = allBookmarks.filter((bookmark) => {
-      if (currentPageUrl && bookmark.metadata?.url === currentPageUrl) {
-        return false;
-      }
-      return true;
-    });
-    contexts.push(...filteredBookmarks);
   }
 
   // Convert core Context to UI ContextItem

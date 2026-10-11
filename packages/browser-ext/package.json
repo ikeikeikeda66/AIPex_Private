@@ -1,13 +1,13 @@
 {
   "name": "@aipexstudio/cool-aipex",
-  "displayName": "AIPex",
+  "displayName": "AIPex Private",
   "version": "0.1.0",
   "description": "Automate your browser with natural language commands - The open source browser-use solution",
   "author": "AIPex Studio",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AIPexStudio/AIPex.git"
+    "url": "git+https://github.com/ikeikeikeda66/AIPex_Private.git"
   },
   "workspaces": [
     "packages/*"
@@ -36,9 +36,6 @@
     "@aipexstudio/aipex-react": "workspace:*",
     "@aipexstudio/browser-runtime": "workspace:*",
     "@aipexstudio/dom-snapshot": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.26.0",
-    "@ricky0123/vad-web": "^0.0.27",
-    "onnxruntime-web": "^1.22.0",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",

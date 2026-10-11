@@ -5,15 +5,11 @@
 
 import type { ContextManager } from "@aipexstudio/aipex-core";
 
-export { BookmarksProvider } from "./bookmarks-provider";
 export { CurrentPageProvider } from "./current-page-provider";
-export { HistoryProvider } from "./history-provider";
 export { ScreenshotProvider } from "./screenshot-provider";
 export { TabsProvider } from "./tabs-provider";
 
-import { BookmarksProvider } from "./bookmarks-provider";
 import { CurrentPageProvider } from "./current-page-provider";
-import { HistoryProvider } from "./history-provider";
 import { ScreenshotProvider } from "./screenshot-provider";
 import { TabsProvider } from "./tabs-provider";
 
@@ -24,9 +20,7 @@ import { TabsProvider } from "./tabs-provider";
 export const allBrowserProviders = [
   new CurrentPageProvider(),
   new TabsProvider(),
-  new BookmarksProvider(),
   new ScreenshotProvider(),
-  new HistoryProvider(),
 ];
 
 /**

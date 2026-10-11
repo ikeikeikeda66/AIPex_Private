@@ -30,21 +30,6 @@ vi.mock("./implementations/monitor-operation.js", () => ({
   },
 }));
 
-vi.mock("./implementations/voice-input.js", () => ({
-  voiceInputIntervention: {
-    metadata: {
-      name: "Voice Input",
-      type: "voice-input",
-      description: "Voice input intervention",
-      enabled: true,
-      inputSchema: { type: "object", properties: {} },
-      outputSchema: { type: "object", properties: {} },
-      examples: [],
-    },
-    execute: vi.fn().mockResolvedValue({ text: "test" }),
-  },
-}));
-
 vi.mock("./implementations/user-selection.js", () => ({
   userSelectionIntervention: {
     metadata: {
@@ -87,11 +72,11 @@ describe("InterventionRegistry", () => {
     expect(registry.isInitialized()).toBe(true);
 
     const allMetadata = registry.getAllMetadata();
-    expect(allMetadata.length).toBe(3);
+    expect(allMetadata.length).toBe(2);
 
     const types = allMetadata.map((m) => m.type);
     expect(types).toContain("monitor-operation");
-    expect(types).toContain("voice-input");
+    expect(types).not.toContain("voice-input");
     expect(types).toContain("user-selection");
   });
 

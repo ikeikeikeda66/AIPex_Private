@@ -27,7 +27,6 @@ import {
 //   readClipboardImageTool,
 //   getClipboardImageInfoTool,
 // } from "./screenshot";
-import { skillTools } from "./skill";
 import { searchElementsTool } from "./snapshot";
 import {
   closeTabTool,
@@ -99,9 +98,6 @@ const browserFunctionTools: BrowserFunctionTool[] = [
 
   // Intervention (4 tools)
   ...interventionTools,
-
-  // Skills (6 tools)
-  ...skillTools,
 ] as const;
 
 export const allBrowserTools: FunctionTool[] =
@@ -110,7 +106,6 @@ export const allBrowserTools: FunctionTool[] =
 export type { BrowserFunctionTool };
 
 // Note: takeSnapshotTool is not included in allBrowserTools as it's called internally
-// Skills tools are enabled to match aipex tool set
 
 // Export intervention tools separately for optional registration
 export { interventionTools } from "./interventions/index.js";

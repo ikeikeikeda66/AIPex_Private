@@ -10,11 +10,9 @@ import { getRuntime } from "@aipexstudio/aipex-react/lib/runtime";
 import { cn } from "@aipexstudio/aipex-react/lib/utils";
 import type { HeaderProps } from "@aipexstudio/aipex-react/types";
 import { conversationStorage } from "@aipexstudio/browser-runtime";
-import { KeyboardIcon, MicIcon, PlusIcon, SettingsIcon } from "lucide-react";
+import { PlusIcon, SettingsIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { UserProfile, useAuth } from "../auth";
 import { ConversationHistory } from "./conversation-history";
-import { useInputMode } from "./input-mode-context";
 import { fromStorageFormat, toStorageFormat } from "./message-adapter";
 
 export function BrowserChatHeader({
@@ -28,7 +26,6 @@ export function BrowserChatHeader({
   const { t } = useTranslation();
   const runtime = getRuntime();
   const { messages, setMessages, interrupt } = useChatContext();
-  const { user, login, isLoading: isAuthLoading } = useAuth();
 
   const [currentConversationId, setCurrentConversationId] = useState<
     string | undefined
@@ -127,12 +124,6 @@ export function BrowserChatHeader({
     onNewChat?.();
   }, [onNewChat]);
 
-  const { inputMode, setInputMode } = useInputMode();
-
-  const toggleInputMode = useCallback(() => {
-    setInputMode(inputMode === "voice" ? "text" : "voice");
-  }, [inputMode, setInputMode]);
-
   return (
     <div
       className={cn(
@@ -141,7 +132,7 @@ export function BrowserChatHeader({
       )}
       {...props}
     >
-      {/* Left side - Settings + Voice/Text toggle + History */}
+      {/* Left side - Settings + History */}
       <div className="flex items-center gap-1">
         <Button
           variant="ghost"
@@ -153,25 +144,6 @@ export function BrowserChatHeader({
           <SettingsIcon className="size-4" />
         </Button>
 
-        {/* Voice / Text toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleInputMode}
-          title={
-            inputMode === "voice"
-              ? t("tooltip.switchToText")
-              : t("tooltip.switchToVoice")
-          }
-          className="size-8"
-        >
-          {inputMode === "voice" ? (
-            <KeyboardIcon className="size-4" />
-          ) : (
-            <MicIcon className="size-4" />
-          )}
-        </Button>
-
         {/* Conversation History */}
         <ConversationHistory
           currentConversationId={currentConversationId}
@@ -180,7 +152,7 @@ export function BrowserChatHeader({
         />
       </div>
 
-      {/* Right side - New Chat, User Profile */}
+      {/* Right side - New Chat */}
       <div className="flex items-center gap-1">
         <Button
           variant="ghost"
@@ -191,16 +163,6 @@ export function BrowserChatHeader({
           <PlusIcon className="size-4" />
           {t("common.newChat")}
         </Button>
-
-        {/* User Profile or Login Button */}
-        {!isAuthLoading &&
-          (user ? (
-            <UserProfile />
-          ) : (
-            <Button variant="ghost" size="sm" onClick={login} className="gap-2">
-              Sign In
-            </Button>
-          ))}
       </div>
 
       {children}

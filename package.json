@@ -1,13 +1,13 @@
 {
   "name": "@aipexstudio/root",
-  "displayName": "AIPex",
+  "displayName": "AIPex Private",
   "version": "0.0.2",
   "private": true,
   "description": "Automate your browser with natural language commands - The open source browser-use solution",
   "author": "AIPex Studio",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AIPexStudio/AIPex.git"
+    "url": "git+https://github.com/ikeikeikeda66/AIPex_Private.git"
   },
   "scripts": {
     "postinstall": "prek install",

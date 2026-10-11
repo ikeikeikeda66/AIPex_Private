@@ -44,12 +44,6 @@ export class InterventionRegistry {
       this.register(monitorOperationIntervention);
       console.log("✅ [InterventionRegistry] Registered monitor-operation");
 
-      const { voiceInputIntervention } = await import(
-        "./implementations/voice-input.js"
-      );
-      this.register(voiceInputIntervention);
-      console.log("✅ [InterventionRegistry] Registered voice-input");
-
       const { userSelectionIntervention } = await import(
         "./implementations/user-selection.js"
       );
