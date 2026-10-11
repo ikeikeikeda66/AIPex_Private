@@ -12,4 +12,3 @@ export {
 } from "./storage.js";
 
 // Voice module exports
-export * from "./voice/index.js";

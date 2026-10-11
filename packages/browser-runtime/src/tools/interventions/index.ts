@@ -76,10 +76,8 @@ export const getInterventionInfoTool = tool({
     "Get detailed information about a specific intervention type, including input/output schemas and examples.",
   parameters: z.object({
     type: z
-      .enum(["monitor-operation", "voice-input", "user-selection"])
-      .describe(
-        "Intervention type (monitor-operation, voice-input, user-selection)",
-      ),
+      .enum(["monitor-operation", "user-selection"])
+      .describe("Intervention type (monitor-operation, user-selection)"),
   }),
   execute: async ({ type }) => {
     try {
@@ -141,10 +139,8 @@ export const requestInterventionTool = tool({
     "Request a human intervention. This will pause AI execution and wait for user input. Use this when you need the user to perform an action or provide information that cannot be obtained programmatically.",
   parameters: z.object({
     type: z
-      .enum(["monitor-operation", "voice-input", "user-selection"])
-      .describe(
-        "Intervention type (monitor-operation, voice-input, user-selection)",
-      ),
+      .enum(["monitor-operation", "user-selection"])
+      .describe("Intervention type (monitor-operation, user-selection)"),
     params: z
       .record(z.string(), z.unknown())
       .nullable()

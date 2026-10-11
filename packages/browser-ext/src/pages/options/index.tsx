@@ -1,5 +1,4 @@
 import type { AppSettings } from "@aipexstudio/aipex-core";
-import type { STTConfigAdapter } from "@aipexstudio/aipex-react";
 import { SettingsPage } from "@aipexstudio/aipex-react";
 import { I18nProvider } from "@aipexstudio/aipex-react/i18n/context";
 import type { Language } from "@aipexstudio/aipex-react/i18n/types";
@@ -12,22 +11,17 @@ import React, { useCallback, useMemo } from "react";
 import ReactDOM from "react-dom/client";
 import { chromeStorageAdapter } from "../../hooks";
 import { createAIProvider } from "../../lib/ai-provider";
-import { McpBridgePanel } from "./mcp-bridge-panel";
-import { SkillsOptionsTab } from "./skills-tab";
 
 /** Parse and validate URL params for deep-linking. */
 function parseUrlParams() {
   const params = new URLSearchParams(window.location.search);
-  const tabAllowlist = new Set(["general", "ai", "skills", "connection"]);
+  const tabAllowlist = new Set(["general", "ai"]);
   const rawTab = params.get("tab");
   const tab =
     rawTab && tabAllowlist.has(rawTab)
-      ? (rawTab as "general" | "ai" | "skills" | "connection")
+      ? (rawTab as "general" | "ai")
       : undefined;
-  const rawSkill = params.get("skill");
-  // Bound skill name length to prevent abuse
-  const skill = rawSkill ? rawSkill.slice(0, 200) : undefined;
-  return { tab, skill };
+  return { tab };
 }
 
 import "../tailwind.css";
@@ -35,27 +29,8 @@ import "../tailwind.css";
 const i18nStorageAdapter = new ChromeStorageAdapter<Language>();
 const themeStorageAdapter = new ChromeStorageAdapter<Theme>();
 
-const chromeSttAdapter: STTConfigAdapter = {
-  load: async () => {
-    const result = await chrome.storage.local.get([
-      "elevenlabsApiKey",
-      "elevenlabsModelId",
-    ]);
-    return {
-      apiKey: (result.elevenlabsApiKey as string) || "",
-      modelId: (result.elevenlabsModelId as string) || "",
-    };
-  },
-  save: async ({ apiKey, modelId }) => {
-    await chrome.storage.local.set({
-      elevenlabsApiKey: apiKey,
-      elevenlabsModelId: modelId,
-    });
-  },
-};
-
 function OptionsPageContent() {
-  const { tab: initialTab, skill: initialSkill } = useMemo(parseUrlParams, []);
+  const { tab: initialTab } = useMemo(parseUrlParams, []);
 
   const handleTestConnection = useCallback(async (settings: AppSettings) => {
     try {
@@ -81,11 +56,7 @@ function OptionsPageContent() {
     <SettingsPage
       storageAdapter={chromeStorageAdapter}
       onTestConnection={handleTestConnection}
-      skillsContent={<SkillsOptionsTab initialSkill={initialSkill} />}
-      connectionContent={<McpBridgePanel />}
-      sttConfig={chromeSttAdapter}
       initialTab={initialTab}
-      initialSkill={initialSkill}
     />
   );
 }

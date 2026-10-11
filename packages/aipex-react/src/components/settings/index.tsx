@@ -13,27 +13,17 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
-  Github,
   Globe,
   Info,
-  Mail,
-  MessageCircle,
-  MessageSquare,
-  Mic,
-  Package,
   Palette,
-  Plug,
   Plus,
   Search,
   Settings,
   Trash2,
-  Twitter,
-  Users,
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "../../i18n/context";
-import { buildWebsiteUrl } from "../../lib/config/website.js";
 import { cn } from "../../lib/utils";
 import { useTheme } from "../../theme/context";
 import { DEFAULT_MODELS } from "../chatbot/constants";
@@ -58,7 +48,6 @@ import {
 } from "../ui/select";
 import { Switch } from "../ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import type { SaveStatus, SettingsPageProps, SettingsTab } from "./types";
 
 const PROVIDER_TYPE_TO_KEY: Record<ProviderType, AIProviderKey> = {
@@ -215,20 +204,35 @@ const createErrorMessage = (
   return ERROR_MESSAGES[key][language as "zh" | "en"] ?? ERROR_MESSAGES[key].en;
 };
 
+const DEFAULT_KEY_DESTINATIONS: Record<string, string> = {
+  openai: "api.openai.com",
+  claude: "api.anthropic.com",
+  anthropic: "api.anthropic.com",
+  google: "generativelanguage.googleapis.com",
+};
+
+function describeKeyDestination(
+  aiHost: string | undefined,
+  providerType: string | undefined,
+): string {
+  if (aiHost) {
+    try {
+      return new URL(aiHost).host;
+    } catch {
+      return aiHost;
+    }
+  }
+  return DEFAULT_KEY_DESTINATIONS[providerType ?? "openai"] ?? "(not set)";
+}
+
 export function SettingsPage({
   storageAdapter,
   storageKey = STORAGE_KEYS.SETTINGS,
   className,
   onSave,
   onTestConnection,
-  skillsContent,
-  connectionContent,
-  sttConfig,
   initialTab,
-  initialSkill: _initialSkill,
 }: SettingsPageProps) {
-  // initialSkill is reserved for future use (pre-select a skill when initialTab="skills")
-  void _initialSkill;
   const { t, language, changeLanguage } = useTranslation();
   const { theme, changeTheme, effectiveTheme } = useTheme();
 
@@ -258,13 +262,6 @@ export function SettingsPage({
     initialTab ?? "general",
   );
   const [searchTerm, setSearchTerm] = useState("");
-  const [dataSharingEnabled, setDataSharingEnabled] = useState(true);
-
-  // ElevenLabs STT state (independent of main settings blob)
-  const [sttApiKey, setSttApiKey] = useState("");
-  const [sttModelId, setSttModelId] = useState("");
-  const [showSttKey, setShowSttKey] = useState(false);
-  const [isSavingStt, setIsSavingStt] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -315,12 +312,6 @@ export function SettingsPage({
               null
             : null;
           setSelectedModelId(initialSelection);
-
-          const loadedDataSharing =
-            loadedSettings.dataSharingEnabled !== undefined
-              ? loadedSettings.dataSharingEnabled
-              : true;
-          setDataSharingEnabled(loadedDataSharing);
         }
       } catch (error) {
         console.error("Failed to load settings:", error);
@@ -331,15 +322,6 @@ export function SettingsPage({
 
     loadSettings();
   }, [storageAdapter, storageKey]);
-
-  // Load ElevenLabs STT config when adapter is provided
-  useEffect(() => {
-    if (!sttConfig) return;
-    sttConfig.load().then(({ apiKey, modelId }) => {
-      setSttApiKey(apiKey);
-      setSttModelId(modelId);
-    });
-  }, [sttConfig]);
 
   const updateSettingsFromModel = useCallback((model: CustomModelConfig) => {
     const providerKey = resolveProviderKey(model);
@@ -567,7 +549,6 @@ export function SettingsPage({
             ? (activeModel?.enabled ?? false)
             : false,
         customModels,
-        dataSharingEnabled,
         defaultModel: resolvedDefaultModel,
       };
       await storageAdapter.save(storageKey, settingsToSave);
@@ -590,7 +571,6 @@ export function SettingsPage({
     settings,
     customModels,
     selectedModelId,
-    dataSharingEnabled,
     storageAdapter,
     storageKey,
     onSave,
@@ -684,38 +664,6 @@ export function SettingsPage({
       });
     }
   }, [t, language]);
-
-  const handleDataSharingChange = useCallback(
-    async (value: string) => {
-      const newValue = value === "share";
-      setDataSharingEnabled(newValue);
-
-      try {
-        await storageAdapter.save(storageKey, {
-          ...settings,
-          dataSharingEnabled: newValue,
-        });
-      } catch (error) {
-        console.error("Error saving data sharing setting:", error);
-      }
-    },
-    [storageAdapter, storageKey, settings],
-  );
-
-  const handleSaveStt = useCallback(async () => {
-    if (!sttConfig) return;
-    setIsSavingStt(true);
-    try {
-      await sttConfig.save({ apiKey: sttApiKey, modelId: sttModelId });
-      setSaveStatus({ type: "success", message: t("settings.saveSuccess") });
-      setTimeout(() => setSaveStatus({ type: "", message: "" }), 3000);
-    } catch (error) {
-      console.error("Error saving STT settings:", error);
-      setSaveStatus({ type: "error", message: t("settings.saveError") });
-    } finally {
-      setIsSavingStt(false);
-    }
-  }, [sttConfig, sttApiKey, sttModelId, t]);
 
   const filteredModels = useMemo(() => {
     const term = searchTerm.toLowerCase();
@@ -827,16 +775,7 @@ export function SettingsPage({
           onValueChange={(value: string) => setActiveTab(value as SettingsTab)}
           className="w-full"
         >
-          <TabsList
-            className={cn(
-              "grid w-full mb-6",
-              skillsContent && connectionContent
-                ? "grid-cols-4"
-                : skillsContent || connectionContent
-                  ? "grid-cols-3"
-                  : "grid-cols-2",
-            )}
-          >
+          <TabsList className={cn("grid w-full mb-6 grid-cols-2")}>
             <TabsTrigger value="general" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               {t("settings.general")}
@@ -845,21 +784,6 @@ export function SettingsPage({
               <Bot className="h-4 w-4" />
               {t("settings.aiConfiguration")}
             </TabsTrigger>
-            {skillsContent && (
-              <TabsTrigger value="skills" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                {t("settings.skillsTab")}
-              </TabsTrigger>
-            )}
-            {connectionContent && (
-              <TabsTrigger
-                value="connection"
-                className="flex items-center gap-2"
-              >
-                <Plug className="h-4 w-4" />
-                {language === "zh" ? "连接" : "Connection"}
-              </TabsTrigger>
-            )}
           </TabsList>
 
           {/* General Tab */}
@@ -943,290 +867,23 @@ export function SettingsPage({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="p-4 bg-muted/50 rounded-lg">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="flex items-center justify-center w-5 h-5 rounded border border-foreground/20">
-                          {dataSharingEnabled && (
-                            <CheckCircle className="w-3 h-3 text-foreground" />
-                          )}
-                        </div>
-                        <span className="font-medium text-sm">
-                          {dataSharingEnabled
-                            ? t("settings.dataSharingEnabled")
-                            : t("settings.dataSharingDisabled")}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {dataSharingEnabled
-                          ? t("settings.dataSharingDescription")
-                          : t("settings.privacyModeDescription")}
-                      </p>
-                    </div>
-                    <Select
-                      value={dataSharingEnabled ? "share" : "privacy"}
-                      onValueChange={handleDataSharingChange}
-                    >
-                      <SelectTrigger className="w-32 h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="share">
-                          {language === "zh" ? "共享数据" : "Share Data"}
-                        </SelectItem>
-                        <SelectItem value="privacy">
-                          {language === "zh" ? "隐私模式" : "Privacy Mode"}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="p-4 bg-muted/50 rounded-lg space-y-2 text-xs text-muted-foreground leading-relaxed">
+                  <p>
+                    {language === "zh"
+                      ? "此扩展不会向作者的服务器发送任何数据。"
+                      : "This extension sends nothing to the fork author's servers."}
+                  </p>
+                  <p>
+                    {language === "zh"
+                      ? "您的提示词、所选页面内容和截图会发送到您在“AI 配置”中设置的 LLM 服务商。这不是完全本地处理。"
+                      : "Your prompts, selected page content and screenshots are sent to the LLM provider configured under AI Configuration. This is not fully local processing."}
+                  </p>
+                  <p>
+                    {language === "zh"
+                      ? "API 密钥以明文形式保存在本浏览器的 chrome.storage.local 中；清除方法：在“AI 配置”中删除密钥，或卸载扩展。"
+                      : "The API key is stored unencrypted in this browser's chrome.storage.local. To remove it, delete the key under AI Configuration or uninstall the extension."}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* ElevenLabs STT Configuration (shown when adapter provided) */}
-            {sttConfig && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Mic className="h-5 w-5" />
-                    {language === "zh"
-                      ? "ElevenLabs 语音转文本"
-                      : "ElevenLabs Speech-to-Text"}
-                  </CardTitle>
-                  <CardDescription>
-                    {language === "zh"
-                      ? "配置 ElevenLabs API 密钥以启用语音注释功能"
-                      : "Configure ElevenLabs API key to enable voice annotation feature"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sttApiKey">
-                      {language === "zh" ? "API 密钥" : "API Key"}
-                      <span className="text-destructive ml-1">*</span>
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="sttApiKey"
-                        type={showSttKey ? "text" : "password"}
-                        value={sttApiKey}
-                        onChange={(e) => setSttApiKey(e.target.value)}
-                        placeholder="xi-..."
-                        className="pr-10"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setShowSttKey(!showSttKey)}
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      >
-                        {showSttKey ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {language === "zh"
-                        ? "在 ElevenLabs 获取 API 密钥："
-                        : "Get your API key from ElevenLabs:"}{" "}
-                      <a
-                        href="https://elevenlabs.io/app/developers/api-keys"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline inline-flex items-center gap-1"
-                      >
-                        elevenlabs.io
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="sttModelId">
-                      {language === "zh"
-                        ? "模型 ID（可选）"
-                        : "Model ID (Optional)"}
-                    </Label>
-                    <Input
-                      id="sttModelId"
-                      type="text"
-                      value={sttModelId}
-                      onChange={(e) => setSttModelId(e.target.value)}
-                      placeholder={
-                        language === "zh"
-                          ? "留空使用默认模型"
-                          : "Leave blank to use default model"
-                      }
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {language === "zh"
-                        ? "默认使用通用多语言模型。如需指定特定模型，请输入模型 ID。"
-                        : "Default uses the general multilingual model. Specify a model ID if needed."}
-                    </p>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleSaveStt}
-                      disabled={isSavingStt}
-                      size="sm"
-                    >
-                      {isSavingStt ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                          {language === "zh" ? "保存中..." : "Saving..."}
-                        </>
-                      ) : language === "zh" ? (
-                        "保存配置"
-                      ) : (
-                        "Save Configuration"
-                      )}
-                    </Button>
-                    {sttApiKey && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSttApiKey("");
-                          setSaveStatus({
-                            type: "info",
-                            message:
-                              language === "zh"
-                                ? "已清空，点击保存以生效"
-                                : "Cleared. Click Save to apply.",
-                          });
-                        }}
-                      >
-                        {language === "zh" ? "清空" : "Clear"}
-                      </Button>
-                    )}
-                  </div>
-
-                  {sttApiKey && (
-                    <Alert>
-                      <AlertDescription className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm">
-                          {language === "zh"
-                            ? "API 密钥已配置"
-                            : "API key is configured"}
-                        </span>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* About Us Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  {t("settings.aboutUs")}
-                </CardTitle>
-                <CardDescription>
-                  {t("settings.aboutDescription")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-4">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button asChild size="icon" variant="default">
-                      <a
-                        href="https://github.com/AIPexStudio/AIPex"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Github className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{t("settings.starOnGithub")}</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button asChild size="icon" variant="outline">
-                      <a
-                        href="https://discord.gg/sfZC3G5qfe"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{t("settings.joinDiscord")}</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button asChild size="icon" variant="outline">
-                      <a
-                        href={buildWebsiteUrl("/contact")}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{t("settings.joinWechat")}</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button asChild size="icon" variant="outline">
-                      <a href="mailto:aipexassistant@gmail.com">
-                        <Mail className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{t("settings.sendEmail")}</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button asChild size="icon" variant="outline">
-                      <a
-                        href="https://x.com/weikangzhang3"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Twitter className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{t("settings.followTwitter")}</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button asChild size="icon" variant="outline">
-                      <a
-                        href={buildWebsiteUrl("/feedback")}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{t("settings.feedback")}</p>
-                  </TooltipContent>
-                </Tooltip>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1574,6 +1231,22 @@ export function SettingsPage({
                             </div>
                           </div>
 
+                          {/* API key destination */}
+                          <p
+                            className="text-xs text-muted-foreground"
+                            data-testid="api-key-destination"
+                          >
+                            {language === "zh"
+                              ? "API 密钥和对话内容仅发送到："
+                              : "Your API key and conversation are sent only to: "}
+                            <span className="font-medium text-foreground">
+                              {describeKeyDestination(
+                                selectedModel.aiHost,
+                                selectedModel.providerType,
+                              )}
+                            </span>
+                          </p>
+
                           {/* Model Selection */}
                           <div className="space-y-2">
                             <Label htmlFor="aiModel">
@@ -1689,24 +1362,10 @@ export function SettingsPage({
               </Card>
             )}
           </TabsContent>
-
-          {/* Skills Tab */}
-          {skillsContent && (
-            <TabsContent value="skills" className="space-y-6">
-              {skillsContent}
-            </TabsContent>
-          )}
-
-          {/* Connection Tab */}
-          {connectionContent && (
-            <TabsContent value="connection" className="space-y-6">
-              {connectionContent}
-            </TabsContent>
-          )}
         </Tabs>
       </div>
     </div>
   );
 }
 
-export type { SettingsPageProps, STTConfigAdapter } from "./types";
+export type { SettingsPageProps } from "./types";

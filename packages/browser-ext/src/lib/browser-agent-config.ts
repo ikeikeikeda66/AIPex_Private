@@ -19,12 +19,7 @@ import {
 } from "@aipexstudio/browser-runtime";
 import { useStorage } from "@aipexstudio/browser-runtime/hooks";
 import { useCallback, useMemo } from "react";
-import {
-  createAIProvider,
-  createProxyProvider,
-  isByokConfigured,
-  PROXY_DEFAULT_MODEL,
-} from "./ai-provider";
+import { assertByokConfigured, createAIProvider } from "./ai-provider";
 
 /**
  * Create browser-specific storage instance
@@ -45,25 +40,14 @@ export function useBrowserStorage() {
 /**
  * Create browser-specific model factory.
  *
- * When BYOK is configured, uses the user's provider + model.
- * Otherwise, uses the claudechrome.com proxy with a default model.
+ * Uses only the user's own provider, key and model. Incomplete settings throw
+ * before any provider is created, so no network request is started.
  */
 export function useBrowserModelFactory() {
   return useCallback((settings: AppSettings) => {
-    if (isByokConfigured(settings)) {
-      // BYOK path – user provides their own key and model
-      const provider = createAIProvider(settings);
-      const modelId = settings.aiModel;
-      if (!modelId) {
-        throw new Error("AI model is not configured");
-      }
-      return aisdk(provider(modelId));
-    }
-
-    // Proxy path – use claudechrome.com API with cookie auth
-    const provider = createProxyProvider();
-    const modelId = settings.aiModel || PROXY_DEFAULT_MODEL;
-    return aisdk(provider(modelId));
+    assertByokConfigured(settings);
+    const provider = createAIProvider(settings);
+    return aisdk(provider(settings.aiModel as string));
   }, []);
 }
 
