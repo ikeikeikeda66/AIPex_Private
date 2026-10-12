@@ -34,7 +34,7 @@ const DEFAULT_PROVIDER_HOSTNAMES = [
 
 const AZURE_HOSTNAME_SUFFIX = ".openai.azure.com";
 
-const LOOPBACK_HOSTNAMES = ["localhost", "127.0.0.1", "[::1]"];
+const LOOPBACK_HOSTNAMES = ["localhost", "127.0.0.1"];
 
 function safeHostname(url: string): string | undefined {
   try {

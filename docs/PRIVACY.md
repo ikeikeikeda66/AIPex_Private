@@ -17,7 +17,7 @@ If BYOK is not configured, `assertByokConfigured` throws before a provider is cr
 
 ### AI host allowlist
 
-Allowed: the preset providers in `packages/core/src/config/ai-providers.ts`, `*.openai.azure.com`, and loopback (`localhost`, `127.0.0.1`, `[::1]`) for local models. Plain `http` is accepted only for loopback. Any other host is rejected in `createAIProvider`, and `createGuardedFetch` checks every request again.
+Allowed: the preset providers in `packages/core/src/config/ai-providers.ts`, `*.openai.azure.com`, and loopback (`localhost` and `127.0.0.1`; IPv6 `[::1]` is not valid in a CSP source list and is not supported) for local models. Plain `http` is accepted only for loopback. Any other host is rejected in `createAIProvider`, and `createGuardedFetch` checks every request again.
 
 - Redirects are sent with `redirect: "manual"` and rejected, so the key is never forwarded.
 - The AI settings screen shows the host that receives the key.

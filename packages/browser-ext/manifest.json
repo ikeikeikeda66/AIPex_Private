@@ -36,7 +36,7 @@
     "open_in_tab": true
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' blob: data: https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://openrouter.ai https://router.requesty.ai https://api.deepseek.com https://api.groq.com https://api.together.xyz https://api.mistral.ai https://api.cohere.ai https://api.perplexity.ai https://api.fireworks.ai https://api.replicate.com https://*.openai.azure.com http://localhost:* http://127.0.0.1:* http://[::1]:*"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' blob: data: https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://openrouter.ai https://router.requesty.ai https://api.deepseek.com https://api.groq.com https://api.together.xyz https://api.mistral.ai https://api.cohere.ai https://api.perplexity.ai https://api.fireworks.ai https://api.replicate.com https://*.openai.azure.com http://localhost:* http://127.0.0.1:*"
   },
   "web_accessible_resources": [
     {
